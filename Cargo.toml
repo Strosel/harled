@@ -1,0 +1,21 @@
+[package]
+name = "harled"
+version = "0.1.0"
+authors = ["axel paulander <axel.paulander@gmail.com>"]
+edition = "2021"
+description = "Helper traits for developing derive macros similar to darling."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/strosel/harled"
+readme = "readme.md"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+
+[dependencies]
+harled_macro = {path = "macro", version = "0.1"}
+harled_core = {path = "core", version = "0.1"}
+syn = "1.0"
+
+[workspace]
+members = ["macro", "core"]
