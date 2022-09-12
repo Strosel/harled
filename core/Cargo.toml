@@ -1,6 +1,6 @@
 [package]
 name = "harled_core"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["axel paulander <axel.paulander@gmail.com>"]
 edition = "2021"
 description = "Core traits and types of the harled crate"
@@ -14,4 +14,3 @@ readme = "../readme.md"
 proc-macro2 = "1.0"
 syn = "1.0"
 quote = "1.0"
-giftwrap = "0.3"

@@ -1,15 +1,19 @@
 extern crate proc_macro;
-use giftwrap::Wrap;
 
 pub(crate) mod kind;
 #[doc(inline)]
 pub use kind::Kind;
 
-#[derive(Debug, Clone, Wrap)]
+#[derive(Debug, Clone)]
 pub enum Error {
-    #[noWrap]
     Unsupported(kind::Kind, proc_macro2::Span),
     Syn(syn::Error),
+}
+
+impl From<syn::Error> for Error {
+    fn from(error: syn::Error) -> Self {
+        Self::Syn(error)
+    }
 }
 
 pub trait DeriveInput {
