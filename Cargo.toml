@@ -1,6 +1,6 @@
 [package]
 name = "harled"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["axel paulander <axel.paulander@gmail.com>"]
 edition = "2021"
 description = "Helper traits for developing derive macros similar to darling."
@@ -13,8 +13,8 @@ readme = "readme.md"
 [lib]
 
 [dependencies]
-harled_macro = {path = "macro", version = "0.1"}
-harled_core = {path = "core", version = "0.1"}
+harled_macro = { path = "macro", version = "0.2" }
+harled_core = { path = "core", version = "0.2" }
 syn = "1.0"
 
 [workspace]
