@@ -4,7 +4,6 @@ use quote::quote;
 use std::collections::HashMap;
 use syn::{spanned::Spanned, Error};
 
-#[allow(dead_code)]
 pub struct MultiDerive {
     ident: syn::Ident,
     data: syn::DataEnum,

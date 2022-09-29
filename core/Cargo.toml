@@ -14,3 +14,4 @@ readme = "../readme.md"
 proc-macro2 = "1.0"
 syn = "1.0"
 quote = "1.0"
+strum = { version = "0.24", features = ["derive"] }
