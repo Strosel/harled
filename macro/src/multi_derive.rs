@@ -4,10 +4,16 @@ use quote::quote;
 use std::collections::HashMap;
 use syn::{spanned::Spanned, Error};
 
+#[derive(PartialEq, Eq)]
+enum DeriveVariant {
+    Type(syn::Type),
+    StructLike(syn::FieldsNamed),
+}
+
 pub struct MultiDerive {
     ident: syn::Ident,
     data: syn::DataEnum,
-    support: HashMap<Kind, syn::Type>,
+    support: HashMap<Kind, DeriveVariant>,
 }
 
 impl MultiDerive {
@@ -39,7 +45,7 @@ impl MultiDerive {
                 return Err(Error::new(
                     var.span(),
                     format!(
-                        "FromDeriveInput variants must have names `{}`,`{}` or `{}`",
+                        "FromDeriveInput enum variants must have names `{}`,`{}` or `{}`",
                         Kind::Struct,
                         Kind::Enum,
                         Kind::Union,
@@ -47,28 +53,45 @@ impl MultiDerive {
                 ));
             }
 
-            let field = if let syn::Fields::Unnamed(ref fields) = var.fields {
-                if fields.unnamed.len() == 1 {
-                    fields.unnamed[0].clone()
-                } else {
+            match var.fields {
+                syn::Fields::Unnamed(ref fields) => {
+                    if fields.unnamed.len() != 1 {
+                        return Err(Error::new(
+                            var.ident.span(),
+                            "FromDeriveInput variants only support 1 unnamed field",
+                        ));
+                    }
+                    let field = fields.unnamed[0];
+
+                    if var.ident == Kind::Struct {
+                        self.support
+                            .insert(Kind::Struct, DeriveVariant::Type(field.ty));
+                    } else if var.ident == Kind::Enum {
+                        self.support
+                            .insert(Kind::Enum, DeriveVariant::Type(field.ty));
+                    } else if var.ident == Kind::Union {
+                        self.support
+                            .insert(Kind::Union, DeriveVariant::Type(field.ty));
+                    }
+                }
+                syn::Fields::Named(fields) => {
+                    if var.ident == Kind::Struct {
+                        self.support
+                            .insert(Kind::Struct, DeriveVariant::StructLike(fields));
+                    } else if var.ident == Kind::Enum {
+                        self.support
+                            .insert(Kind::Enum, DeriveVariant::StructLike(fields));
+                    } else if var.ident == Kind::Union {
+                        self.support
+                            .insert(Kind::Union, DeriveVariant::StructLike(fields));
+                    }
+                }
+                syn::Fields::Unit => {
                     return Err(Error::new(
                         var.ident.span(),
-                        "FromDeriveInput variants only support 1 field",
+                        "FromDeriveInput cannot be derived for unit variants",
                     ));
                 }
-            } else {
-                return Err(Error::new(
-                    var.ident.span(),
-                    "FromDeriveInput variants only support unnamed fields",
-                ));
-            };
-
-            if var.ident == Kind::Struct {
-                self.support.insert(Kind::Struct, field.ty);
-            } else if var.ident == Kind::Enum {
-                self.support.insert(Kind::Enum, field.ty);
-            } else if var.ident == Kind::Union {
-                self.support.insert(Kind::Union, field.ty);
             }
         }
 
@@ -91,11 +114,12 @@ impl MultiDerive {
             };
 
             branches.extend(match support.get(&variant) {
-                Some(ref ty) => {
+                Some(DeriveVariant::Type(ref ty)) => {
                     quote! {
                         ::harled::syn::Data::#variant(_) => Ok(Self::#variant(<#ty as ::harled::FromDeriveInput>::parse(ast)?)),
                     }
                 }
+                Some(DeriveVariant::StructLike(_)) => todo!(),
                 None => {
                     quote! {
                         ::harled::syn::Data::#variant(s) => {
