@@ -56,6 +56,9 @@ impl MultiDerive {
                 ));
             }
 
+            //safe to unwrap, invalid cases will return above
+            let kind = var.ident.clone().try_into().unwrap();
+
             match var.fields {
                 syn::Fields::Unnamed(ref fields) => {
                     if fields.unnamed.len() != 1 {
@@ -66,31 +69,12 @@ impl MultiDerive {
                     }
                     let field = fields.unnamed[0].clone();
 
-                    if var.ident == Kind::Struct {
-                        self.support
-                            .insert(Kind::Struct, DeriveVariant::Type(field.ty));
-                    } else if var.ident == Kind::Enum {
-                        self.support
-                            .insert(Kind::Enum, DeriveVariant::Type(field.ty));
-                    } else if var.ident == Kind::Union {
-                        self.support
-                            .insert(Kind::Union, DeriveVariant::Type(field.ty));
-                    }
+                    self.support.insert(kind, DeriveVariant::Type(field.ty));
                 }
                 syn::Fields::Named(ref fields) => {
-                    if var.ident == Kind::Struct {
-                        let used_fields = validate_fields(Kind::Struct, fields)?;
-                        self.support
-                            .insert(Kind::Struct, DeriveVariant::StructLike(used_fields));
-                    } else if var.ident == Kind::Enum {
-                        let used_fields = validate_fields(Kind::Enum, fields)?;
-                        self.support
-                            .insert(Kind::Enum, DeriveVariant::StructLike(used_fields));
-                    } else if var.ident == Kind::Union {
-                        let used_fields = validate_fields(Kind::Union, fields)?;
-                        self.support
-                            .insert(Kind::Union, DeriveVariant::StructLike(used_fields));
-                    }
+                    let used_fields = validate_fields(kind, fields)?;
+                    self.support
+                        .insert(kind, DeriveVariant::StructLike(used_fields));
                 }
                 syn::Fields::Unit => {
                     return Err(Error::new(

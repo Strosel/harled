@@ -1,4 +1,6 @@
+use std::{convert::TryFrom, str::FromStr};
 use strum::{AsRefStr, Display, EnumString};
+
 #[derive(Debug, Display, Clone, Copy, PartialEq, Eq, Hash, AsRefStr, EnumString)]
 pub enum Kind {
     Struct,
@@ -12,5 +14,13 @@ impl quote::ToTokens for Kind {
         use quote::TokenStreamExt;
 
         tokens.append(Ident::new(self.as_ref(), Span::call_site()))
+    }
+}
+
+impl TryFrom<syn::Ident> for Kind {
+    type Error = <Kind as FromStr>::Err;
+
+    fn try_from(value: syn::Ident) -> Result<Self, Self::Error> {
+        value.to_string().parse()
     }
 }
