@@ -1,8 +1,7 @@
-use crate::Kind;
+use crate::{fields, Kind};
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::collections::HashSet;
-use syn::{spanned::Spanned, Error};
+use syn::Error;
 
 pub(crate) struct SingleDerive {
     kind: Kind,
@@ -25,49 +24,9 @@ impl SingleDerive {
         }
     }
 
-    fn legal_fields(&mut self) -> HashSet<String> {
-        match self.kind {
-            Kind::Struct => [
-                "attrs",
-                "vis",
-                "struct_token",
-                "ident",
-                "generics",
-                "fields",
-            ],
-            Kind::Enum => [
-                "attrs",
-                "vis",
-                "enum_token",
-                "ident",
-                "generics",
-                "variants",
-            ],
-            Kind::Union => ["attrs", "vis", "union_token", "ident", "generics", "fields"],
-        }
-        .map(String::from)
-        .into()
-    }
-
     fn validate(&mut self) -> syn::Result<()> {
-        let legal_fields = self.legal_fields();
-
         if let syn::Fields::Named(ref fields) = self.data.fields {
-            let fields: HashSet<_> = fields
-                .named
-                .iter()
-                .filter_map(|f| f.ident.as_ref())
-                .map(|f| f.to_string())
-                .collect();
-
-            if let Some(ident) = fields.difference(&legal_fields).next() {
-                return Err(Error::new(
-                    ident.span(),
-                    format!("Unsupported field `{}`", ident),
-                ));
-            }
-
-            self.used_fields = fields.intersection(&legal_fields).cloned().collect();
+            self.used_fields = fields::validate_fields(self.kind, fields)?;
         } else {
             return Err(Error::new(
                 self.ident.span(),
@@ -93,41 +52,7 @@ impl SingleDerive {
             Kind::Union => quote!(::harled::syn::Data::Union(s)),
         };
 
-        let construct = used_fields
-            .into_iter()
-            .fold(quote!(), |mut construct, field| {
-                construct.extend(match field.as_str() {
-                    "attrs" => quote! {
-                        attrs: ast.attrs,
-                    },
-                    "vis" => quote! {
-                        vis: ast.vis,
-                    },
-                    "struct_token" => quote! {
-                        struct_token: s.struct_token,
-                    },
-                    "enum_token" => quote! {
-                        enum_token: s.enum_token,
-                    },
-                    "union_token" => quote! {
-                        union_token: s.union_token,
-                    },
-                    "ident" => quote! {
-                        ident: ast.ident,
-                    },
-                    "generics" => quote! {
-                        generics: ast.generics,
-                    },
-                    "fields" => quote! {
-                        fields: s.fields,
-                    },
-                    "variants" => quote! {
-                        variants: s.variants.into_iter().collect(),
-                    },
-                    _ => unreachable!(),
-                });
-                construct
-            });
+        let construct = fields::construct_fields(&used_fields);
 
         quote! {
             impl ::harled::FromDeriveInput for #ident {
