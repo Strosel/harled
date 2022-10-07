@@ -83,25 +83,21 @@ impl MultiDerive {
         let Self { ident, support, .. } = self;
 
         //NOTE should both inner types and struct like enums be allowed or just inner types?
-        let mut branches: TokenStream = quote!();
-
-        for variant in [Kind::Struct, Kind::Enum, Kind::Union] {
+        let branches = [Kind::Struct, Kind::Enum, Kind::Union].into_iter().fold(quote!(), |mut branches, variant| {
             let span = match variant {
                 Kind::Struct => quote!(struct_token),
                 Kind::Enum => quote!(enum_token),
                 Kind::Union => quote!(union_token),
             };
 
-            branches = match support.get(&variant) {
+            branches.extend(match support.get(&variant) {
                 Some(ref ty) => {
                     quote! {
-                        #branches
                         ::harled::syn::Data::#variant(_) => Ok(Self::#variant(<#ty as ::harled::FromDeriveInput>::parse(ast)?)),
                     }
                 }
                 None => {
                     quote! {
-                        #branches
                         ::harled::syn::Data::#variant(s) => {
                             use ::harled::syn::spanned::Spanned;
                             Err(::harled::Error::Unsupported(
@@ -111,8 +107,9 @@ impl MultiDerive {
                         }
                     }
                 }
-            };
-        }
+            });
+            branches
+        });
 
         quote! {
             impl ::harled::FromDeriveInput for #ident {

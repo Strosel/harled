@@ -93,49 +93,41 @@ impl SingleDerive {
             Kind::Union => quote!(::harled::syn::Data::Union(s)),
         };
 
-        let mut construct = quote!();
-
-        for field in used_fields {
-            construct = match field.as_str() {
-                "attrs" => quote! {
-                    #construct
-                    attrs: ast.attrs,
-                },
-                "vis" => quote! {
-                    #construct
-                    vis: ast.vis,
-                },
-                "struct_token" => quote! {
-                    #construct
-                    struct_token: s.struct_token,
-                },
-                "enum_token" => quote! {
-                    #construct
-                    enum_token: s.enum_token,
-                },
-                "union_token" => quote! {
-                    #construct
-                    union_token: s.union_token,
-                },
-                "ident" => quote! {
-                    #construct
-                    ident: ast.ident,
-                },
-                "generics" => quote! {
-                    #construct
-                    generics: ast.generics,
-                },
-                "fields" => quote! {
-                    #construct
-                    fields: s.fields,
-                },
-                "variants" => quote! {
-                    #construct
-                    variants: s.variants.into_iter().collect(),
-                },
-                _ => unreachable!(),
-            };
-        }
+        let construct = used_fields
+            .into_iter()
+            .fold(quote!(), |mut construct, field| {
+                construct.extend(match field.as_str() {
+                    "attrs" => quote! {
+                        attrs: ast.attrs,
+                    },
+                    "vis" => quote! {
+                        vis: ast.vis,
+                    },
+                    "struct_token" => quote! {
+                        struct_token: s.struct_token,
+                    },
+                    "enum_token" => quote! {
+                        enum_token: s.enum_token,
+                    },
+                    "union_token" => quote! {
+                        union_token: s.union_token,
+                    },
+                    "ident" => quote! {
+                        ident: ast.ident,
+                    },
+                    "generics" => quote! {
+                        generics: ast.generics,
+                    },
+                    "fields" => quote! {
+                        fields: s.fields,
+                    },
+                    "variants" => quote! {
+                        variants: s.variants.into_iter().collect(),
+                    },
+                    _ => unreachable!(),
+                });
+                construct
+            });
 
         quote! {
             impl ::harled::FromDeriveInput for #ident {
