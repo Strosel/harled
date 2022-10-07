@@ -2,6 +2,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use syn::spanned::Spanned;
 
+mod fields;
 mod multi_derive;
 mod single_derive;
 
