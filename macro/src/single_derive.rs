@@ -52,7 +52,7 @@ impl SingleDerive {
             Kind::Union => quote!(::harled::syn::Data::Union(s)),
         };
 
-        let construct = fields::construct_fields(used_fields);
+        let construct = fields::construct_fields(&used_fields);
 
         quote! {
             impl ::harled::FromDeriveInput for #ident {

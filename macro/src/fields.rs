@@ -4,7 +4,7 @@ use quote::quote;
 use std::collections::HashSet;
 use syn::{spanned::Spanned, Error};
 
-pub fn legal_fields(kind: Kind) -> HashSet<String> {
+fn legal_fields(kind: Kind) -> HashSet<String> {
     match kind {
         Kind::Struct => [
             "attrs",
@@ -48,7 +48,7 @@ pub fn validate_fields(kind: Kind, fields: &syn::FieldsNamed) -> syn::Result<Vec
     Ok(fields.intersection(&legal_fields).cloned().collect())
 }
 
-pub fn construct_fields(used_fields: Vec<String>) -> TokenStream {
+pub fn construct_fields(used_fields: &Vec<String>) -> TokenStream {
     used_fields
         .into_iter()
         .fold(quote!(), |mut construct, field| {

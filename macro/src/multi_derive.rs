@@ -1,4 +1,7 @@
-use crate::Kind;
+use crate::{
+    fields::{construct_fields, validate_fields},
+    Kind,
+};
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::collections::HashMap;
@@ -7,7 +10,7 @@ use syn::{spanned::Spanned, Error};
 #[derive(PartialEq, Eq)]
 enum DeriveVariant {
     Type(syn::Type),
-    StructLike(syn::FieldsNamed),
+    StructLike(Vec<String>),
 }
 
 pub struct MultiDerive {
@@ -61,7 +64,7 @@ impl MultiDerive {
                             "FromDeriveInput variants only support 1 unnamed field",
                         ));
                     }
-                    let field = fields.unnamed[0];
+                    let field = fields.unnamed[0].clone();
 
                     if var.ident == Kind::Struct {
                         self.support
@@ -74,16 +77,19 @@ impl MultiDerive {
                             .insert(Kind::Union, DeriveVariant::Type(field.ty));
                     }
                 }
-                syn::Fields::Named(fields) => {
+                syn::Fields::Named(ref fields) => {
                     if var.ident == Kind::Struct {
+                        let used_fields = validate_fields(Kind::Struct, fields)?;
                         self.support
-                            .insert(Kind::Struct, DeriveVariant::StructLike(fields));
+                            .insert(Kind::Struct, DeriveVariant::StructLike(used_fields));
                     } else if var.ident == Kind::Enum {
+                        let used_fields = validate_fields(Kind::Enum, fields)?;
                         self.support
-                            .insert(Kind::Enum, DeriveVariant::StructLike(fields));
+                            .insert(Kind::Enum, DeriveVariant::StructLike(used_fields));
                     } else if var.ident == Kind::Union {
+                        let used_fields = validate_fields(Kind::Union, fields)?;
                         self.support
-                            .insert(Kind::Union, DeriveVariant::StructLike(fields));
+                            .insert(Kind::Union, DeriveVariant::StructLike(used_fields));
                     }
                 }
                 syn::Fields::Unit => {
@@ -105,7 +111,6 @@ impl MultiDerive {
 
         let Self { ident, support, .. } = self;
 
-        //NOTE should both inner types and struct like enums be allowed or just inner types?
         let branches = [Kind::Struct, Kind::Enum, Kind::Union].into_iter().fold(quote!(), |mut branches, variant| {
             let span = match variant {
                 Kind::Struct => quote!(struct_token),
@@ -119,7 +124,12 @@ impl MultiDerive {
                         ::harled::syn::Data::#variant(_) => Ok(Self::#variant(<#ty as ::harled::FromDeriveInput>::parse(ast)?)),
                     }
                 }
-                Some(DeriveVariant::StructLike(_)) => todo!(),
+                Some(DeriveVariant::StructLike(used_fields)) => {
+                    let construct = construct_fields(used_fields);
+                    quote! {
+                        ::harled::syn::Data::#variant(_) => Ok(Self::#variant{#construct}),
+                    }
+                },
                 None => {
                     quote! {
                         ::harled::syn::Data::#variant(s) => {
