@@ -1,6 +1,6 @@
 [package]
 name = "harled"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["axel paulander <axel.paulander@gmail.com>"]
 edition = "2021"
 description = "Helper traits for developing derive macros similar to darling."
@@ -10,12 +10,16 @@ readme = "readme.md"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[lib]
-
 [dependencies]
-harled_macro = { path = "macro", version = "0.2" }
-harled_core = { path = "core", version = "0.2" }
-syn = "1.0"
+harled_macro = { workspace = true }
+harled_core = { workspace = true }
+syn = { workspace = true }
 
 [workspace]
 members = ["macro", "core"]
+
+[workspace.dependencies]
+harled_macro = { path = "macro", version = "0.3" }
+harled_core = { path = "core", version = "0.3" }
+syn = "1.0"
+
