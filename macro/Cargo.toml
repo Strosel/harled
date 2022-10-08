@@ -1,6 +1,6 @@
 [package]
 name = "harled_macro"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["axel paulander <axel.paulander@gmail.com>"]
 edition = "2021"
 description = "Macros for the harled crate"
@@ -14,7 +14,7 @@ readme = "../readme.md"
 proc-macro = true
 
 [dependencies]
-syn = "1.0"
+harled_core = { workspace = true }
+syn = { workspace = true }
 quote = "1.0"
 proc-macro2 = "1.0"
-harled_core = { path="../core", version="0.2" }
