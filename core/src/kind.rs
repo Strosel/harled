@@ -24,3 +24,11 @@ impl TryFrom<syn::Ident> for Kind {
         value.to_string().parse()
     }
 }
+use syn::parse::{Parse, ParseStream};
+impl Parse for Kind {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        syn::Ident::parse(input)?
+            .try_into()
+            .map_err(|e| syn::Error::new(input.span(), format!("{:?}", e)))
+    }
+}

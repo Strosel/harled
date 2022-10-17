@@ -2,10 +2,12 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use syn::spanned::Spanned;
 
+mod combo;
 mod fields;
 mod multi_derive;
 mod single_derive;
 
+pub(crate) use combo::ComboKind;
 pub(crate) use harled_core::Kind;
 
 #[proc_macro_derive(FromDeriveInput, attributes(harled))]
@@ -17,7 +19,7 @@ pub fn derive_from_derive_input(input: TokenStream) -> TokenStream {
         syn::Data::Struct(_) => {
             enum Count {
                 None,
-                One(Kind),
+                One(ComboKind),
                 Many,
             }
 
@@ -26,15 +28,11 @@ pub fn derive_from_derive_input(input: TokenStream) -> TokenStream {
                 .iter()
                 .filter_map(|attr| {
                     (attr.path.get_ident().unwrap() == "harled").then(|| {
-                        //syn parse to proc_macro2::Group ?
                         let group: proc_macro2::Group = syn::parse(attr.tokens.clone().into())
                             .map_err(|_| "Attr is not a group")?;
                         if group.delimiter() == proc_macro2::Delimiter::Parenthesis {
-                            Ok(group
-                                .stream()
-                                .to_string()
-                                .parse::<Kind>()
-                                .map_err(|_| "Attr is not a kind")?)
+                            Ok(syn::parse2::<ComboKind>(group.stream())
+                                .map_err(|_| "Attr is not a | separated list of Kind")?)
                         } else {
                             Err("Attr is not paren delimitered")
                         }
