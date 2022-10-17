@@ -1,6 +1,6 @@
 [package]
 name = "harled"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["axel paulander <axel.paulander@gmail.com>"]
 edition = "2021"
 description = "Helper traits for developing derive macros similar to darling."
