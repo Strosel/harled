@@ -28,7 +28,7 @@ fn legal_fields(kind: Kind) -> HashSet<String> {
     .into()
 }
 
-pub fn validate_fields(kind: Kind, fields: &syn::FieldsNamed) -> syn::Result<Vec<String>> {
+pub fn validate_fields(kind: Kind, fields: &syn::FieldsNamed) -> syn::Result<HashSet<String>> {
     let legal_fields = legal_fields(kind);
 
     let fields: HashSet<_> = fields
@@ -45,43 +45,41 @@ pub fn validate_fields(kind: Kind, fields: &syn::FieldsNamed) -> syn::Result<Vec
         ));
     }
 
-    Ok(fields.intersection(&legal_fields).cloned().collect())
+    Ok(&fields & &legal_fields)
 }
 
-pub fn construct_fields(used_fields: &Vec<String>) -> TokenStream {
-    used_fields
-        .into_iter()
-        .fold(quote!(), |mut construct, field| {
-            construct.extend(match field.as_str() {
-                "attrs" => quote! {
-                    attrs: ast.attrs,
-                },
-                "vis" => quote! {
-                    vis: ast.vis,
-                },
-                "struct_token" => quote! {
-                    struct_token: s.struct_token,
-                },
-                "enum_token" => quote! {
-                    enum_token: s.enum_token,
-                },
-                "union_token" => quote! {
-                    union_token: s.union_token,
-                },
-                "ident" => quote! {
-                    ident: ast.ident,
-                },
-                "generics" => quote! {
-                    generics: ast.generics,
-                },
-                "fields" => quote! {
-                    fields: s.fields,
-                },
-                "variants" => quote! {
-                    variants: s.variants.into_iter().collect(),
-                },
-                _ => unreachable!(),
-            });
-            construct
-        })
+pub fn construct_fields(used_fields: &HashSet<String>) -> TokenStream {
+    used_fields.iter().fold(quote!(), |mut construct, field| {
+        construct.extend(match field.as_str() {
+            "attrs" => quote! {
+                attrs: ast.attrs,
+            },
+            "vis" => quote! {
+                vis: ast.vis,
+            },
+            "struct_token" => quote! {
+                struct_token: s.struct_token,
+            },
+            "enum_token" => quote! {
+                enum_token: s.enum_token,
+            },
+            "union_token" => quote! {
+                union_token: s.union_token,
+            },
+            "ident" => quote! {
+                ident: ast.ident,
+            },
+            "generics" => quote! {
+                generics: ast.generics,
+            },
+            "fields" => quote! {
+                fields: s.fields,
+            },
+            "variants" => quote! {
+                variants: s.variants.into_iter().collect(),
+            },
+            _ => unreachable!(),
+        });
+        construct
+    })
 }

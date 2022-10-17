@@ -4,13 +4,13 @@ use crate::{
 };
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use syn::{spanned::Spanned, Error};
 
 #[derive(PartialEq, Eq)]
 enum DeriveVariant {
     Type(syn::Type),
-    StructLike(Vec<String>),
+    StructLike(HashSet<String>),
 }
 
 pub struct MultiDerive {
